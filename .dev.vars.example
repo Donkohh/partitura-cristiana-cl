@@ -1,0 +1,14 @@
+# Ejemplo de variables locales de Cloudflare Workers (wrangler).
+# Copia este archivo como `.dev.vars` para desarrollo local; `.dev.vars`
+# esta excluido del repositorio por .gitignore.
+
+# Actual (usada por @opennextjs/cloudflare para seleccionar el entorno
+# durante `npm run preview`):
+NEXTJS_ENV=development
+
+# FUTURO (Etapa 2 del plan, docs/plan-implementacion-fase-1.md): solo si
+# existiera configuracion de Supabase. Placeholders, nunca valores reales.
+# Las claves anon/publicas son publicas por diseno; la service-role keys
+# NUNCA va aqui (usa secretos del Worker via `wrangler secret put`).
+# NEXT_PUBLIC_SUPABASE_URL=<tu-proyecto>.supabase.co
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=<clave-anon-publica>
