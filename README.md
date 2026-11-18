@@ -1,73 +1,71 @@
-# Partituras Cristianas Chile V2
+# Donko Partituras
 
-Biblioteca digital de partituras para coros y ministerios musicales
-cristianos de Chile. Partituras Cristianas Chile está en proceso de
-convertirse en plataforma real sobre Next.js, Supabase y Cloudflare Workers.
-Esta entrega mantiene un catálogo de demostración con navegación por
-colecciones y fichas de obra.
+Biblioteca personal de partituras en PDF. La portada es pública y permite
+buscar, abrir y descargar archivos. Un único administrador gestiona carpetas y
+partituras desde un panel privado.
 
-## Documentación
+> «Aquí subo las partituras que tengo y a veces uso».
 
-- `docs/arquitectura-fase-1.md` — decisiones de arquitectura confirmadas
-  (modelo de datos, roles, RLS, Storage, nuevas rutas).
-- `docs/plan-implementacion-fase-1.md` — plan de implementación por etapas,
-  con criterios de aceptación y bloqueos pendientes.
-- `docs/audit/analisis-fase-1.md` — análisis de partida de la V2 y referencias
-  del proyecto original.
+## Stack
+
+- Next.js 16.4.6 (App Router) + React 19 + Tailwind CSS 4.
+- Supabase: Postgres, Auth y Storage privado.
+- Cloudflare Workers con `@opennextjs/cloudflare`.
 
 ## Desarrollo
 
 ```bash
+npm install
+cp .env.local.example .env.local
 npm run dev
 ```
 
-Abre `http://localhost:3000`.
+Completa `.env.local` con las variables descritas en el archivo de ejemplo.
+
+## Supabase
+
+1. Crea un proyecto y ejecuta, en orden, las migraciones
+   `supabase/migrations/0001_donko_library.sql` y
+   `supabase/migrations/0002_pdf_limit_10mb.sql` en el SQL Editor.
+2. En **Authentication → Providers**, activa Email. Desactiva el registro
+   público para que nadie pueda crear cuentas.
+3. Crea manualmente el usuario administrador con el correo de `ADMIN_EMAIL` y
+   confírmalo.
+4. Copia la URL del proyecto, la clave publishable y la clave secreta a
+   `.env.local`.
+
+Las migraciones crean las tablas `folders` y `scores`, RLS de solo lectura para
+el catálogo público, la función atómica `delete_library_folder` y el bucket
+privado `score-files` (10 MB, solo PDF).
 
 ## Verificación
 
 ```bash
-npm run lint
+npm test
 npm run typecheck
-npm run test
+npm run lint
 npm run build
 ```
 
-## Despliegue (Cloudflare Workers)
+Los tests usan `node:test` y un pequeño cargador para resolver imports `.ts`.
+Cubren búsqueda, validación, PDFs, políticas de administrador y operaciones con
+compensación entre base de datos y Storage.
 
-La app se despliega en Cloudflare **Workers** con
-[`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare)
-(Cloudflare Pages/`next-on-pages` no es compatible con esta versión).
+## Producción
 
-Comandos:
+Usa un proyecto Supabase distinto al de desarrollo. Crea `.env.prod` a partir
+de `.env.prod.example` con las variables `NEXT_PUBLIC_*` y `ADMIN_EMAIL`. En
+Cloudflare configura `ADMIN_EMAIL` y `SUPABASE_SECRET_KEY` como secretos del
+Worker. Ver `docs/produccion.md`.
 
 ```bash
-npm run preview   # build + preview local en el runtime de Workers (sin credenciales)
-npm run deploy    # build + deploy a Cloudflare (requiere wrangler login)
+npm run preview       # build + preview local con .env.local y .dev.vars
+npm run deploy:check  # valida .env.prod y los secretos sin desplegar
+npm run deploy        # build de producción + deploy
 ```
 
-Notas:
+`npm run deploy` carga `.env.prod` explícitamente, valida que no apunte al
+Supabase de `.env.local` y comprueba que los secretos existan. No pongas
+`SUPABASE_SECRET_KEY` en `.env.prod` ni en archivos versionados.
 
-- `cacheComponents`/PPR está desactivado en `next.config.ts`: el render
-  por etapas de Cache Components aún no es compatible con el runtime de
-  Workers del adaptador (1.20.x). Revisar al actualizar el adaptador.
-- `/catalogo` se renderiza a pedido con los parámetros de búsqueda;
-  el resto de las rutas es estático. `sitemap.xml` y `robots.txt`
-  quedan prerenderizados.
-- No se usan bindings de pago: sin R2/D1 (no hay ISR ni `use cache`) y
-  con `images.unoptimized` (las fotos se sirven tal cual desde assets).
-- Opcional: define `NEXT_PUBLIC_SITE_URL` como *Build Variable* en el
-  pipeline de Cloudflare con la URL final del sitio (por ejemplo
-  `https://partiturascristianas.cl`). La usan los metadatos canónicos,
-  `robots.txt` y `sitemap.xml`. Sin ella quedan apuntando al respaldo
-  local y conviene corregirla antes de indexar el sitio en buscadores.
-
-## Alcance actual
-
-- Inicio editorial responsive.
-- Catálogo demo con búsqueda y filtros por formación y colección.
-- Fichas de obra y colección.
-- Sin conexión a Supabase, autenticación ni descargas reales.
-- Los datos de demostración viven en `src/data/demo-catalog.ts`.
-
-La visualización y descarga segura de partituras, junto con la gestión de
-permisos, se incorporarán en una etapa posterior.
+No ejecutes `deploy` ni migraciones remotas sin revisar antes el entorno.
