@@ -14,6 +14,8 @@
     "deploy": "node scripts/deploy-prod.mjs --allow-same-supabase",
     "upload": "node scripts/deploy-prod.mjs --upload --allow-same-supabase",
     "deploy:check": "node scripts/deploy-prod.mjs --dry-run --allow-same-supabase",
+    "db:migrate": "node scripts/apply-migrations.mjs",
+    "db:secure": "node scripts/apply-migrations.mjs --disable-signup",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "engines": {

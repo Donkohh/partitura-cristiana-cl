@@ -50,7 +50,7 @@ function findSecretKeys() {
   for (const file of envFilesReadByOpenNext) {
     const values = loadEnvFile(resolve(root, file));
     for (const key of Object.keys(values)) {
-      if (/(_SECRET|_PASSWORD|SERVICE_ROLE|^ADMIN_EMAIL$)/i.test(key)) {
+      if (/(_SECRET|_PASSWORD|_TOKEN|SERVICE_ROLE|^ADMIN_EMAIL$)/i.test(key)) {
         found.push(`${file}: ${key}`);
       }
     }
@@ -99,7 +99,7 @@ for (const [key, value] of Object.entries(prodEnv)) {
 }
 
 const prodSecretKeys = Object.keys(prodEnv).filter((key) =>
-  /(_SECRET|_PASSWORD|SERVICE_ROLE)/i.test(key)
+  /(_SECRET|_PASSWORD|_TOKEN|SERVICE_ROLE)/i.test(key)
 );
 if (prodSecretKeys.length > 0) {
   fail(

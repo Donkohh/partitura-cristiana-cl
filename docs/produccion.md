@@ -52,6 +52,18 @@ depender de `.env.local`. En local, los secretos van en `.dev.vars`.
 
 ## Supabase de producción
 
+La vía recomendada es usar un Personal Access Token de Supabase guardado en
+`.supabase-token` (ignorado por Git):
+
+```bash
+npm run db:secure
+```
+
+Ese comando aplica `0001_donko_library.sql`, `0002_pdf_limit_10mb.sql` y
+desactiva el registro público. No imprime el token.
+
+Alternativa manual en el SQL Editor:
+
 1. Ejecuta `supabase/migrations/0001_donko_library.sql`.
 2. Ejecuta `supabase/migrations/0002_pdf_limit_10mb.sql`.
 3. Desactiva el registro público en Auth.

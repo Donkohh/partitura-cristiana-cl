@@ -42,6 +42,13 @@ Las migraciones crean las tablas `folders` y `scores`, RLS de solo lectura para
 el catálogo público, la función atómica `delete_library_folder` y el bucket
 privado `score-files` (10 MB, solo PDF).
 
+Con un Personal Access Token de Supabase en `.supabase-token` puedes aplicarlas
+y desactivar el registro público de una vez:
+
+```bash
+npm run db:secure
+```
+
 ## Verificación
 
 ```bash
