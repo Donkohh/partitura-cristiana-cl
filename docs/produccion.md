@@ -10,6 +10,11 @@ Usa dos proyectos Supabase independientes:
 No reutilices el mismo proyecto ni las mismas claves para ambos entornos. El
 bucket `score-files` también debe ser independiente.
 
+Si por ahora usas un único proyecto, `npm run deploy` y `npm run deploy:check`
+incluyen `--allow-same-supabase` para permitir que `.env.local` y `.env.prod`
+apunten al mismo Supabase. Es una excepción consciente: mientras no tengas un
+proyecto de pruebas, los cambios locales pueden afectar datos reales.
+
 ## Variables
 
 Crea `.env.prod` a partir de `.env.prod.example` (está ignorado por Git):

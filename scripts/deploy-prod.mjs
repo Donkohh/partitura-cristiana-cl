@@ -7,6 +7,7 @@ const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
 const uploadOnly = args.has("--upload");
 const allowCustomDomain = args.has("--allow-custom-domain");
+const allowSameSupabase = args.has("--allow-same-supabase");
 
 function loadEnvFile(path) {
   if (!existsSync(path)) return {};
@@ -170,10 +171,11 @@ if (!allowCustomDomain && !/^https:\/\/[^/]+\.workers\.dev$/i.test(site.origin))
 const devEnv = loadEnvFile(resolve(root, ".env.local"));
 if (
   devEnv.NEXT_PUBLIC_SUPABASE_URL &&
-  devEnv.NEXT_PUBLIC_SUPABASE_URL.trim() === supabaseUrl
+  devEnv.NEXT_PUBLIC_SUPABASE_URL.trim() === supabaseUrl &&
+  !allowSameSupabase
 ) {
   fail(
-    "La URL de Supabase de producción es igual a la de .env.local. Separa los entornos antes de desplegar."
+    "La URL de Supabase de producción es igual a la de .env.local. Separa los entornos o usa --allow-same-supabase si trabajas con un único proyecto."
   );
 }
 

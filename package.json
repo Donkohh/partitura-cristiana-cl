@@ -11,9 +11,9 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --import ./tests/register.mjs --test tests/library-text.test.mjs tests/library-validation.test.mjs tests/library-pdf.test.mjs tests/storage-paths.test.mjs tests/auth.test.mjs tests/library-operations.test.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "node scripts/deploy-prod.mjs",
-    "upload": "node scripts/deploy-prod.mjs --upload",
-    "deploy:check": "node scripts/deploy-prod.mjs --dry-run",
+    "deploy": "node scripts/deploy-prod.mjs --allow-same-supabase",
+    "upload": "node scripts/deploy-prod.mjs --upload --allow-same-supabase",
+    "deploy:check": "node scripts/deploy-prod.mjs --dry-run --allow-same-supabase",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "engines": {

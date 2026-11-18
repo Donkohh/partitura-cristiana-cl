@@ -57,10 +57,14 @@ compensación entre base de datos y Storage.
 
 ## Producción
 
-Usa un proyecto Supabase distinto al de desarrollo. Crea `.env.prod` a partir
-de `.env.prod.example` con las variables `NEXT_PUBLIC_*` y `ADMIN_EMAIL`. En
-Cloudflare configura `ADMIN_EMAIL` y `SUPABASE_SECRET_KEY` como secretos del
-Worker. Ver `docs/produccion.md`.
+Usa un proyecto Supabase distinto al de desarrollo si puedes. Crea `.env.prod`
+a partir de `.env.prod.example` con las variables `NEXT_PUBLIC_*` y
+`ADMIN_EMAIL`. En Cloudflare configura `ADMIN_EMAIL` y `SUPABASE_SECRET_KEY`
+como secretos del Worker. Ver `docs/produccion.md`.
+
+Si usas un único proyecto, los scripts `deploy` y `deploy:check` ya incluyen
+`--allow-same-supabase`; aun así, los cambios locales pueden afectar datos
+reales.
 
 ```bash
 npm run preview       # build + preview local con .env.local y .dev.vars
