@@ -38,6 +38,13 @@ npx wrangler secret put SUPABASE_SECRET_KEY
 `.env.prod` ni exponerse al navegador. El script de deploy comprueba que ambos
 secretos existan.
 
+OpenNext copia los archivos `.env*` a `.open-next/cloudflare/next-env.mjs`
+dentro del Worker. Por eso ningún `.env*` debe contener `SUPABASE_SECRET_KEY` ni
+contraseñas. El script de deploy aborta si las encuentra. Durante el build
+genera un `.env.production.local` temporal solo con las variables públicas de
+`.env.prod` y lo elimina al terminar; así la compilación usa la URL correcta sin
+depender de `.env.local`. En local, los secretos van en `.dev.vars`.
+
 ## Supabase de producción
 
 1. Ejecuta `supabase/migrations/0001_donko_library.sql`.

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
@@ -33,6 +33,59 @@ function fail(message) {
   process.exit(1);
 }
 
+const envFilesReadByOpenNext = [
+  ".env",
+  ".env.local",
+  ".env.production",
+  ".env.production.local",
+  ".env.development",
+  ".env.development.local",
+  ".env.test",
+  ".env.test.local",
+];
+
+function findSecretKeys() {
+  const found = [];
+  for (const file of envFilesReadByOpenNext) {
+    const values = loadEnvFile(resolve(root, file));
+    for (const key of Object.keys(values)) {
+      if (/(_SECRET|_PASSWORD|SERVICE_ROLE|^ADMIN_EMAIL$)/i.test(key)) {
+        found.push(`${file}: ${key}`);
+      }
+    }
+  }
+  return found;
+}
+
+function assertBuildHasNoSecrets() {
+  const nextEnvPath = resolve(root, ".open-next/cloudflare/next-env.mjs");
+  if (!existsSync(nextEnvPath)) {
+    fail("No se encontró .open-next/cloudflare/next-env.mjs tras el build.");
+  }
+
+  const content = readFileSync(nextEnvPath, "utf8");
+  const hasOpaqueSecret = /sb_secret_[A-Za-z0-9_-]{12,}/.test(content);
+  const jwtTokens = content.match(/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g) ?? [];
+  const hasServiceRoleJwt = jwtTokens.some((token) => {
+    try {
+      const payload = JSON.parse(
+        Buffer.from(token.split(".")[1], "base64url").toString("utf8")
+      );
+      return payload?.role === "service_role";
+    } catch {
+      return false;
+    }
+  });
+
+  if (hasOpaqueSecret || hasServiceRoleJwt) {
+    rmSync(resolve(root, ".open-next"), { recursive: true, force: true });
+    fail(
+      "El build contiene un secreto en .open-next/cloudflare/next-env.mjs y fue eliminado. " +
+        "Quita SUPABASE_SECRET_KEY de los archivos .env*; usa .dev.vars en local y secretos de Cloudflare en producción."
+    );
+  }
+}
+
 function maskEmail(email) {
   const [local, domain] = email.split("@");
   if (!domain) return "***";
@@ -42,6 +95,25 @@ function maskEmail(email) {
 const prodEnv = loadEnvFile(resolve(root, ".env.prod"));
 for (const [key, value] of Object.entries(prodEnv)) {
   process.env[key] = value;
+}
+
+const prodSecretKeys = Object.keys(prodEnv).filter((key) =>
+  /(_SECRET|_PASSWORD|SERVICE_ROLE)/i.test(key)
+);
+if (prodSecretKeys.length > 0) {
+  fail(
+    `No pongas secretos en .env.prod: ${prodSecretKeys.join(", ")}. ` +
+      "Configúralos con `npx wrangler secret put NOMBRE`."
+  );
+}
+
+const envSecretKeys = findSecretKeys();
+if (envSecretKeys.length > 0) {
+  fail(
+    "Hay secretos o datos de administrador en archivos .env* que OpenNext incrustaría en el Worker:\n- " +
+      envSecretKeys.join("\n- ") +
+      "\nMuévelos a .dev.vars (local) y a secretos de Cloudflare (producción)."
+  );
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
@@ -95,12 +167,6 @@ if (!allowCustomDomain && !/^https:\/\/[^/]+\.workers\.dev$/i.test(site.origin))
     "NEXT_PUBLIC_SITE_URL no es un dominio workers.dev. Usa --allow-custom-domain si es intencional."
   );
 }
-if (process.env.SUPABASE_SECRET_KEY) {
-  fail(
-    "No pongas SUPABASE_SECRET_KEY en .env.prod. Configúralo con `npx wrangler secret put SUPABASE_SECRET_KEY`."
-  );
-}
-
 const devEnv = loadEnvFile(resolve(root, ".env.local"));
 if (
   devEnv.NEXT_PUBLIC_SUPABASE_URL &&
@@ -184,5 +250,27 @@ try {
   );
 }
 
+if (!/^[A-Za-z0-9._-]+$/.test(publishableKey)) {
+  fail("La clave publishable contiene caracteres no permitidos.");
+}
+
+const productionEnvPath = resolve(root, ".env.production.local");
+process.on("exit", () => rmSync(productionEnvPath, { force: true }));
+
+writeFileSync(
+  productionEnvPath,
+  [
+    `NEXT_PUBLIC_SUPABASE_URL=${supabase.origin}`,
+    `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${publishableKey}`,
+    `NEXT_PUBLIC_SITE_URL=${site.origin}`,
+    "",
+  ].join("\n"),
+  "utf8"
+);
+
+delete process.env.SUPABASE_SECRET_KEY;
+delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 run("npx", ["opennextjs-cloudflare", "build"]);
+assertBuildHasNoSecrets();
 run("npx", ["opennextjs-cloudflare", uploadOnly ? "upload" : "deploy"]);

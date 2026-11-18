@@ -17,10 +17,14 @@ partituras desde un panel privado.
 ```bash
 npm install
 cp .env.local.example .env.local
+cp .dev.vars.example .dev.vars
 npm run dev
 ```
 
-Completa `.env.local` con las variables descritas en el archivo de ejemplo.
+Completa `.env.local` solo con las variables públicas. Los secretos
+(`ADMIN_EMAIL` y `SUPABASE_SECRET_KEY`) van en `.dev.vars`; `npm run dev` y
+`npm run preview` lo cargan. No pongas secretos en archivos `.env*`: OpenNext los
+incrustaría en el Worker.
 
 ## Supabase
 
@@ -31,8 +35,8 @@ Completa `.env.local` con las variables descritas en el archivo de ejemplo.
    público para que nadie pueda crear cuentas.
 3. Crea manualmente el usuario administrador con el correo de `ADMIN_EMAIL` y
    confírmalo.
-4. Copia la URL del proyecto, la clave publishable y la clave secreta a
-   `.env.local`.
+4. Copia la URL del proyecto y la clave publishable a `.env.local`; copia
+   `ADMIN_EMAIL` y `SUPABASE_SECRET_KEY` a `.dev.vars`.
 
 Las migraciones crean las tablas `folders` y `scores`, RLS de solo lectura para
 el catálogo público, la función atómica `delete_library_folder` y el bucket
@@ -65,7 +69,10 @@ npm run deploy        # build de producción + deploy
 ```
 
 `npm run deploy` carga `.env.prod` explícitamente, valida que no apunte al
-Supabase de `.env.local` y comprueba que los secretos existan. No pongas
-`SUPABASE_SECRET_KEY` en `.env.prod` ni en archivos versionados.
+Supabase de `.env.local` y comprueba que los secretos existan. Genera un
+`.env.production.local` temporal con las variables públicas para el build y lo
+elimina al terminar. También aborta si encuentra secretos en `.env*` o en
+`.open-next/cloudflare/next-env.mjs`. No pongas `SUPABASE_SECRET_KEY` en
+`.env.prod`, en `.env*` ni en archivos versionados.
 
 No ejecutes `deploy` ni migraciones remotas sin revisar antes el entorno.

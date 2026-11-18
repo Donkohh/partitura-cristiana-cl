@@ -1,12 +1,14 @@
-# Copia este archivo como .dev.vars (ignorado por Git) para preview local en Workers.
-# No uses estos valores para producción.
+# Copia este archivo como .dev.vars (ignorado por Git).
+# Lo usan `npm run dev` y `npm run preview`. No lo uses para producción.
 
 NEXTJS_ENV=development
 
-# Deben coincidir con .env.local. En producción se configuran como secretos
-# del Worker, no como variables públicas.
+# `npm run dev` carga este archivo en el proceso de Next.js.
+# `npm run preview` lo carga Wrangler en el Worker local.
+# En producción se configuran como secretos del Worker.
 ADMIN_EMAIL=admin@ejemplo.cl
 SUPABASE_SECRET_KEY=tu-clave-secreta
 
 # NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY y
-# NEXT_PUBLIC_SITE_URL se incrustan en tiempo de build desde .env.local.
+# NEXT_PUBLIC_SITE_URL van en .env.local (públicas) y se incrustan al compilar.
+# No pongas secretos en .env*: OpenNext los incluiría en el bundle del Worker.
